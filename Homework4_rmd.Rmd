@@ -1,0 +1,352 @@
+---
+title: "Homework 4"
+author: "Ruben Pena"
+date: "04 April 2019"
+output:
+  html_document:
+    self_contained: no
+  html_notebook: default
+  pdf_document: default
+---
+```{r}
+install.packages(c("xts","TSA",'xts','tseries'))
+library(TSA)
+library(xts)
+library(tseries)
+```
+
+## 5.12(a) Display and interpret the time series plot for the S&P data.
+```{r}
+data(SP)
+SP <- as.xts(SP)
+SP_plot<-plot(SP, grid = TRUE)
+SP_plot
+```
+The plot shows an upward trend with exponential growth until near 1968; where it may be stabilizing more data would help to verify.
+
+
+## 5.12(b) Now take natural logarithms of the quarterly values and display and the time series plot of the transformed values. Describe the effect of the logarithms onthe behavior of the series
+```{r}
+# 5.12(b) Now take natural logarithms of the quarterly values and display and the time series plot of the transformed values. Describe the effect of the logarithms onthe behavior of the series
+log_SP<-log(SP)
+log_plot<-plot(log_SP, ylab=expression(log(value)), grid =TRUE)
+log_plot
+
+```
+The log transformation of the S&P data also shows the exponential growth in the process, but also indicates the leveling near the end of the time series.
+
+
+
+## 5.12(c) Calculate the (fractional) relative changes, (Yt−Yt−1)/Yt−1, and compare them to the differences of (natural) logarithms, ∇log(Yt). How do they com-pare for smaller values and for larger values
+```{r}
+diff_frac <- diff(SP) / lag(SP, 1)
+diff_log <- diff(log(SP))
+merged <- merge.xts(frac = diff_frac, logdiff = diff_log)
+plot(merged, screens = c(1, 1), auto.key = TRUE,
+       ylab = "Sales",
+       col = c("blue", "red"))
+```
+The merged graphs show that there is very little difference between the fractional changes and the differences of the natural log. Most differences occur in the larger values.
+
+
+
+## 5.12 (d) Based on (i) time plot, (ii) ACF plot, (iii) the ADF test, and (iv) PP test, determine if the series in (a), (b), and (c) are stationary.
+
+### (a)
+(i)Non-stationary. RW w/ drift.
+
+(ii)acf
+```{r}
+acfA<-acf(SP)
+#Non-stationaryin appearance.No sign of decaying to 0.
+```
+
+(iii)adf test
+```{r}
+adfA<-adf.test(SP)
+adfA
+#Significant evidence to  NOT reject Hnull(Non-Stationary)
+
+```
+
+(iv)pp test
+```{r}
+ppA<-pp.test(SP)
+ppA
+#Similarresuts. Signifcant evidence to NOT reject Hnull(Non-stationary)
+```
+
+### (b)
+(i)Non-stationary. There is still evidence of a stochastic process in the log transformed data based on the graph.
+
+
+(ii)acf
+```{r}
+acfB<-acf(log_SP)
+acfB
+#Still not decaying to zero within expectations. Non-stationary.
+```
+
+(iii)adf test
+```{r}
+adfB<-adf.test(log_SP)
+adfB
+#Significant Evidence to NOT reject Hnull(Non-stationary)
+
+```
+
+(iv)pptest
+```{r}
+ppB<-pp.test(log_SP)
+ppB
+#Significant evidence to NOT reject Hnull(Non-stationary).
+```
+
+### (c)
+(i) Graphs of both diff of log and relative change  appear to be stationary around 0 mean.
+
+(ii) acf test
+```{r}
+acfc1<-acf(diff_log,na.action=na.pass)
+acfc1
+
+```
+```{r}
+acfc2<-acf(diff_frac,na.action=na.pass)
+acfc2
+```
+From the ACF tests everything appears to be in bounds and indicates stationarity.
+
+(iii) adf test
+
+```{r}
+adfc1<-adf.test(na.omit(diff_log))
+adfc1
+
+```
+
+```{r}
+adfc2<-adf.test(na.omit(diff_frac))
+adfc2
+```
+For both ADF Tests there is significant evidence to REJECT  Hnull. The test indicates Stationarity.
+
+(iv) pp-test
+
+```{r}
+ppc1<-pp.test(na.omit(diff_log))
+ppc1
+```
+
+```{r}
+ppc2<-pp.test(na.omit(diff_frac))
+ppc2
+```
+
+Both pp tests also show significant evidence to reject Hnull; indicating stationarity.
+
+
+## 6.12 From a time series of 100 observations, we calculate r1 =-0.49, r2 = 0.31, r3 = -0.21, r4 = 0.11, and |rk| < 0.09 for k > 4. On this basis alone, what ARIMA model would we tentatively specify for the series?
+
+```{r}
+x<-c(0,1,2,3,4)
+y<-c(1,-.49,.31,-.21,.11)
+plot(y~x,type='h')
+abline(a=0,b=0)
+#CI bounds at 0.2, and -0.2
+```
+ARIMA(0,0,0)
+
+## 6.13 A stationary time series of length 121 produced sample partial autocorrelation of phi11 = 0.8, phi22 = -0.6, phi33 = 0.08, and phi44 = 0.00. Based on this information alone, what model would we tentatively specify for the series?
+
+```{r}
+y1<-c(0,1,2,3,4)
+x1<-c(1,.8,-.6,.08,0)
+plot(y~x, type='h')
+abline(a=0,b=0)
+n1<-121
+ci2<-2/sqrt(n1)
+ci2
+```
+ARIMA(0,0,0)
+
+
+## 6.19 The time plots of two series are shown below. (a) For each of the series, describe r 1 using the terms strongly positive, moderately positive, near zero, moderately negative, or strongly negative. Do you need to know the scale of measurement for the series to answer this?
+
+## (a)
+Series A - Positive
+Series B - Near Zero
+Yes, scale is important.
+
+
+## (b) Repeat part (a) for r 2 .
+Series A - Positive
+Series B - Negative
+Yes, scale is important to judge the relative differences
+
+
+
+## 6.26 Simulate an MA(1) time series of length n = 48 with theta = 0.5. 
+
+```{r}
+ma1=arima.sim(n=48,list(order=c(0,0,1),ma=0.5))
+```
+
+# (a) What are the theoretical autocorrelations for this model?
+
+
+
+
+
+
+
+
+
+
+
+
+# (b) Calculate and plot the sample ACF for your simulated series. How well do the values and patterns match the theoretical ACF from part (a)?
+```{r}
+acfma1<-acf(ma1)
+```
+
+
+# (c) Calculate and plot the theoretical partial autocorrelation function for this model. Plot sufficient lags until the correlations are negligible. (Hint: See Equation (6.2.6) on page 114.)
+
+
+
+phikk = - (theta^k(1-theta^2))/(1-theta^2(k=1)) for k>=1
+
+
+
+
+
+
+
+
+
+
+
+
+# (d) Calculate and plot the sample PACF for your simulated series. How well do the values and patterns match the theoretical PACF from part (c)?
+```{r}
+pacfma1<-pacf(ma1)
+```
+
+
+## 6.27 Simulate an AR(2) time series of length n = 72 with phi1 = 0.7 and phi= -0.4.
+
+```{r}
+ar2=arima.sim(n=72,list(order=c(2,0,0),ar=c(0.7,-0.4)))
+```
+
+### (a) Calculate and plot the theoretical autocorrelation function for this model. Plot sufficient lags until the correlations are negligible.
+
+
+
+
+
+
+
+
+
+
+
+
+### (b) Calculate and plot the sample ACF for your simulated series. How well do the values and patterns match the theoretical ACF from part (a)?
+```{r}
+acfAR2<-acf(ar2)
+```
+
+### (c) What are the theoretical partial autocorrelations for this model?
+
+
+
+
+
+
+
+
+
+
+
+### (e) Calculate and plot the sample PACF for your simulated series. How well do the values and patterns match the theoretical PACF from part (c)?
+```{r}
+pacfar2<-pacf(ar2)
+```
+
+
+
+## 6.31 (K=0 IN ADF TEST)Simulate a nonstationary time series with n = 60 according to the model ARIMA(0,1,1) with theta = 0.8.
+
+```{r}
+n<-60
+arima011<-arima.sim(n=n,list(order=c(0,1,1),ma=0.8))
+
+```
+
+### (a) Perform the (augmented) Dickey-Fuller test on the series with k = 0 in Equation (6.4.1) on page 128. (With k = 0, this is the Dickey-Fuller test and is not augmented.) Comment on the results.
+
+
+```{r}
+adf1<-adf.test(arima011,k=0)
+adf1
+
+```
+There is very significant evidence to NOT reject Hnull(non-stationary). 
+This p-val is very very high and as such is suspect?
+
+### (b) Perform the augmented Dickey-Fuller test on the series with k chosen by the software, that is, the best value for k. Comment on the results.
+
+```{r}
+adf2<-adf.test(arima011)
+adf2
+
+```
+The function chose a lag order of 3 but still has a very high p-val signifying to NOT Reject the Hnull(non-stationary).
+
+
+
+### (c) Repeat parts (a) and (b) but use the differences of the simulated series. Comment on the results. (Here, of course, you should reject the unit root hypothesis.)
+
+```{r}
+diff1<-diff(arima011)
+adf3<-adf.test(diff1,k=0)
+adf3
+```
+
+
+```{r}
+adf4<-adf.test(diff1)
+adf4
+```
+
+
+
+
+## 6.36 The data file named robot contains a time series obtained from an industrial robot. The robot was put through a sequence of maneuvers, and the distance from a desired ending point was recorded in inches. This was repeated 324 times to form the time series.
+
+
+
+
+### (a) Display the time series plot of the data. Based on this information, do these data appear to come from a stationary or nonstationary process?
+
+
+
+
+### (b) Calculate and plot the sample ACF and PACF for these data. Based on this additional information, do these data appear to come from a stationary or non-stationary process?
+
+
+
+
+### (c) Calculate and interpret the sample EACF.
+
+
+
+
+### (d) Use the information criterions (AIC, corrected AIC, BIC, best subsets ARMA approach, and the automated order selection in auto.arima function in R) to find a best model for these data. Compare the results with what you discovered in parts (a), (b), and (c).
+
+
+
+
+
